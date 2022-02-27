@@ -1,0 +1,4 @@
+*.egg-info
+data
+/scripts/adaptive_beat_detection.py
+/scripts/latency_test.py
