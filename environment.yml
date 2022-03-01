@@ -1,4 +1,4 @@
-name: ambirhythms_exp2
+name: ambirhythms
 channels:
   - defaults
 dependencies:
@@ -124,4 +124,4 @@ dependencies:
     - xlrd==2.0.1
     - zope-event==4.5.0
     - zope-interface==5.4.0
-prefix: /home/matt/Pop/anaconda3/envs/ambirhythms_exp2
+prefix: /home/matt/Pop/anaconda3/envs/ambirhythms

@@ -1,5 +1,4 @@
 import mido
-from warnings import warn
 from operator import itemgetter
 from psychopy.clock import Clock
 from numpy import array, pi, cos, sin, sqrt, arctan2
@@ -57,17 +56,20 @@ class DrumPad:
             self.velocities.append(msg.velocity)
             self.new_tap = True
 
-    def find_beat(self, ioi, metre=12, n=10):
-        beat, rotation = [None] * 2
+    def find_beat(self, ioi, metre=12, n=10, verbose=False):
+        if not 5 < n < 15:
+            raise ValueError('n must be between 6 and 14 (inclusive)')
+        if not self.listening:
+            self.listen()
 
-        if len(self.taps) >= n and self.new_tap:
+        if self.new_tap and len(self.taps) >= n:
             self.new_tap = False
             taps = array([2 * pi * t / (ioi / 1000) for t in self.taps[-n:]])
 
             divisors = [i for i in range(1, metre + 1) if metre % i == 0]
             critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271][n-6]
 
-            rho, theta, z, phase = [[None] * len(divisors)] * 4
+            rho, theta, z, phase = [[None] * len(divisors) for _ in range(4)]
             for i, d in enumerate(divisors):
                 scaled = taps / d
 
@@ -77,20 +79,24 @@ class DrumPad:
 
                 if i == 0:
                     if z[i] > critical_value:
-                        phase[i] = theta / (2 * pi)
+                        phase[i] = theta[i] / (2 * pi)
                     else:
                         phase[i] = 0
-                        warn('Unit phase too inconsistent for latency estimate')
                 else:
-                    phase[i] = round(d * (theta / (2 * pi) % 1) - phase[0]) % d
+                    phase[i] = d * (theta[i] / (2 * pi) % 1) - phase[0]
+                    phase[i] = int(round(phase[i]) % d)
 
-            accepted = dict([(divisors[i + 1], (Z, int(P))) for i, (Z, P) in enumerate(zip(z[1:], phase[1:]))
+            # Only accept significant beat vector lengths if unit vector length is also significant
+            accepted = dict([(divisors[i+1], (Z, P)) for i, (Z, P) in enumerate(zip(z[1:], phase[1:]))
                              if Z > critical_value and z[0] > critical_value])
+
             if accepted:
                 beat, (_, rotation) = max(accepted.items(), key=itemgetter(1))
+                if verbose:
+                    self.print_summary(beat, rotation, taps, metre)
                 self.beat_found = True
-
-            return beat, rotation
+                return beat, rotation
+        return None, None
 
     def listen(self):
         self.reset()
@@ -108,6 +114,12 @@ class DrumPad:
 
         self.taps = []
         self.velocities = []
+
+    def print_summary(self, beat, rotation, taps, metre):
+        print('Beat: {0} \tRotation: {1}'.format(beat,
+                                                 rotation))
+        print('Found in {0:.1f} cycles | {1} taps'.format(taps[-1] / (2 * metre * pi),
+                                                          len(self.taps)))
 
 
 def resultant_vector(rads):
