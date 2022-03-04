@@ -56,7 +56,7 @@ class DrumPad:
             self.velocities.append(msg.velocity)
             self.new_tap = True
 
-    def find_beat(self, ioi, metre=12, n=10, verbose=False):
+    def find_beat(self, ioi, metre=12, n=10, verbose=False, detailed=False):
         if not 5 < n < 15:
             raise ValueError('n must be between 6 and 14 (inclusive)')
         if not self.listening:
@@ -64,7 +64,7 @@ class DrumPad:
 
         if self.new_tap and len(self.taps) >= n:
             self.new_tap = False
-            taps = array([2 * pi * t / (ioi / 1000) for t in self.taps[-n:]])
+            taps = array([2 * pi * t * 1e3 / ioi for t in self.taps[-n:]])
 
             divisors = [i for i in range(1, metre + 1) if metre % i == 0]
             critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271][n-6]
@@ -95,11 +95,11 @@ class DrumPad:
                 if verbose:
                     self.print_summary(beat, rotation, taps, metre)
                 self.beat_found = True
-                return beat, rotation
-        return None, None
+                return [beat, rotation, rho, theta, z] if detailed else [beat, rotation]
+        return [None for _ in range(5)] if detailed else [None, None]
 
-    def listen(self):
-        self.reset()
+    def listen(self, delay=0):
+        self.reset(delay)
         self.listening = True
 
     def stop(self):
