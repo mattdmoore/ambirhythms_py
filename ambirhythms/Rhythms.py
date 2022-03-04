@@ -9,6 +9,12 @@ class Rhythms:
     def __getitem__(self, idx):
         return self.rhythm[idx]
 
+    def __iter__(self):
+        yield self.rhythm
+
+    def __len__(self):
+        return len(self.rhythm)
+
 
 class Rhythm:
     def __init__(self, onsets):
