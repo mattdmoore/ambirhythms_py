@@ -31,7 +31,9 @@ class Stimulus(Sound):
     def append_sine(self):
         envelope = self.envelope(self.attack, self.decay)
         for i, x in enumerate(envelope):
-            self.value.append(x * sin(2 * pi * self.hz * (i / self.sampleRate)))
+            f1 = sin(2 * pi * self.hz * (i / self.sampleRate))
+            f0 = sin(pi * self.hz * (i / self.sampleRate))
+            self.value.append(x * (f1 + f0) / 2)
 
     def n_samples(self, ms):
         return ms * (self.sampleRate / 1e3)
