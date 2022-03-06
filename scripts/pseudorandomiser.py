@@ -1,11 +1,13 @@
-from ambirhythms.Trials import Trials
 from random import sample
 from itertools import chain
 from numpy import mean
 from sys import argv
 
+from ambirhythms.Trials import Trials
+from ambirhythms.Block import Block
 
-def pseudo_randomise_trials(ioi_list):
+
+def pseudo_randomise_trials(ioi_list, participant_id):
     rhythms = {'ambiguous': {57: (4, 6, 0), 62: (4, 5, 6), 90: (3, 5, 4), 229: (2, 3, 4), 259: (4, 7, 6),
                              120: (0, 1, 2), 121: (0, 1, 2), 133: (0, 1, 2), 187: (0, 1, 2), 349: (0, 1, 2),
                              35: (2, 0, 6), 76: (3, 1, 7), 96: (2, 0, 1), 148: (8, 6, 0), 196: (8, 6, 0)},
@@ -45,13 +47,25 @@ def pseudo_randomise_trials(ioi_list):
                 if consecutive == 2:
                     randomised_trials.shuffle_trials()
 
-    return *blocked_trials, randomised_trials
+    blocks = [*blocked_trials, randomised_trials]
+    return [Block(i, j, blocks[j]) for i, j in enumerate(block_order(participant_id))]
+
+
+def block_order(i):
+    orders = {
+        0: (0, 1, 2),
+        1: (2, 0, 1),
+        2: (1, 0, 2),
+        3: (2, 1, 0)
+    }
+    return orders[i % 4]
 
 
 def estimate_duration(block, ioi_list):
     metre = 12
     cycles = 6
     milliseconds_per_min = 6e4
+
     estimated_duration = len(block) * metre * cycles * mean(ioi_list) / milliseconds_per_min
     print('Estimated duration: {0:.1f} minutes \n'
           'Based on 3 x {1:.1f} minute blocks of {2} trials at {3} cycles/trial'.format(
@@ -62,16 +76,16 @@ def estimate_duration(block, ioi_list):
     return None
 
 
-def main(ioi_list=(130, 150, 170, 190)):
-    blocks = pseudo_randomise_trials(ioi_list)
+def main(participant_id):
+    ioi_list = (130, 150, 170, 190)
+    # ioi_list = (10, 20, 30, 40)
+    blocks = pseudo_randomise_trials(ioi_list, participant_id)
     estimate_duration(blocks[0], ioi_list)
     return blocks
 
 
 if __name__ == '__main__':
     if any(argv[1:]):
-        print(argv)
-        iois = tuple(int(arg) for arg in argv[1:])
-        main(iois)
+        main(argv[1])
     else:
-        main()
+        main(0)
