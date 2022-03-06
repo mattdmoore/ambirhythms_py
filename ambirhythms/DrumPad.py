@@ -48,9 +48,11 @@ class DrumPad:
         self.port = mido.open_input(devices[idx], callback=self.tap)
 
     def tap(self, msg):
-        if self.listening:
+        if self.listening and msg.type == 'note_on':
             t = self.clock.getTime()
-            if msg.velocity == 0:
+            if msg.velocity == 0:  # ignore note off messages
+                return
+            if self.taps and t - self.taps[-1] < .1:  # ignore sub-100ms taps (stick bounce)
                 return
             self.taps.append(t)
             self.velocities.append(msg.velocity)
@@ -66,10 +68,10 @@ class DrumPad:
             self.new_tap = False
             taps = array([2 * pi * t * 1e3 / ioi for t in self.taps[-n:]])
 
-            divisors = [i for i in range(1, metre + 1) if metre % i == 0]
             critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271][n-6]
-
+            divisors = [i for i in range(1, metre + 1) if metre % i == 0]
             rho, theta, z, phase = [[None] * len(divisors) for _ in range(4)]
+
             for i, d in enumerate(divisors):
                 scaled = taps / d
 
@@ -91,12 +93,19 @@ class DrumPad:
                              if Z > critical_value and z[0] > critical_value])
 
             if accepted:
-                beat, (_, rotation) = max(accepted.items(), key=itemgetter(1))
+                beat, (_, phase) = max(accepted.items(), key=itemgetter(1))
                 if verbose:
-                    self.print_summary(beat, rotation, taps, metre)
+                    self.print_summary(beat, phase, taps, metre)
                 self.beat_found = True
-                return [beat, rotation, rho, theta, z] if detailed else [beat, rotation]
-        return [None for _ in range(5)] if detailed else [None, None]
+
+                # Beat found
+                return [beat, phase, rho, theta, z] if detailed else [beat, phase]
+            # Beat not found
+            return [None, None, rho, theta, z] if detailed else [None, None]
+
+    def get_data(self):
+        self.stop()
+        return [self.taps, self.velocities]
 
     def listen(self, delay=0):
         self.reset(delay)
@@ -115,9 +124,9 @@ class DrumPad:
         self.taps = []
         self.velocities = []
 
-    def print_summary(self, beat, rotation, taps, metre):
-        print('Beat: {0} \tRotation: {1}'.format(beat,
-                                                 rotation))
+    def print_summary(self, beat, phase, taps, metre):
+        print('Beat: {0} \tPhase: {1}'.format(beat,
+                                              phase))
         print('Found in {0:.1f} cycles | {1} taps'.format(taps[-1] / (2 * metre * pi),
                                                           len(self.taps)))
 
