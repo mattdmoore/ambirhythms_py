@@ -16,10 +16,14 @@ class Trials:
         return '\n'.join(str(t) for t in self.trials)
 
     def __iter__(self):
-        yield self.trials
+        for trial in self.trials:
+            yield trial
 
     def __len__(self):
         return len(self.trials)
+
+    def __getitem__(self, item):
+        return self.trials[item]
 
     def shuffle_trials(self):
         # Shuffle rhythms and rotations within ioi groups
