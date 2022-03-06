@@ -1,10 +1,6 @@
-from psychopy.core import wait
-
-from ambirhythms.Rhythms import Rhythms
-from ambirhythms.Stimulus import Stimulus
+from psychopy import visual
 from ambirhythms.DrumPad import DrumPad
-
-from scripts import pseudorandomiser
+from scripts import experiment
 
 # TODO:
 #   Pseudorandomiser checks to prevent clumps   DONE
@@ -17,48 +13,16 @@ from scripts import pseudorandomiser
 #   Practice trial
 #       - Example using 16-unit metre with clear beats
 #       - Experimenter check that participant is tapping hard enough
-#   Assemble full experiment
-#       - Counterbalance blocked and randomised lists
-#       - Inter- and intra-block breaks (both skippable but intra-block timed to 2min)
+#   Assemble full experiment    DONE
+#     x - Counterbalance blocked and randomised lists
+#     x - Inter- and intra-block breaks (both skippable but intra-block timed to 2min)
 #   Data storage
-#       - Pickle cache after every trial, write to csv at end (keep cache)
+#     x - Pickle cache after every trial
+#     x - Write to csv between blocks
 #   Package for install
 #       - Check on clean Python environment in Windows first, then lab install
 
-
-def run_block(trial_list):
-    block = [[], []]
-    for i, trial in enumerate(trial_list.trials):
-        idx, r, ioi = trial
-        durations = rhythms[idx].rotate(r).durations()
-        h = 0 if i < len(trial_list) / 2 else 1
-        block[h].append(Stimulus(durations, ioi))
-
-    for half in block:
-        for stimulus in half:
-            stimulus.play(loops=6)
-            while stimulus.status == 1 and not drum_pad.beat_found:
-                drum_pad.find_beat(stimulus.ioi, verbose=True)
-            stimulus.stop()
-            drum_pad.reset()
-            wait(2)
-        wait(120)
-
-
-def block_order(i):
-    orders = {
-        0: (0, 1, 2),
-        1: (1, 2, 0),
-        2: (0, 2, 1),
-        3: (2, 1, 0)
-    }
-    return orders[i % 4]
-
-
 if __name__ == '__main__':
-    participant_id = 0
-
     drum_pad = DrumPad('SPD')
-    rhythms = Rhythms(12, 2)
-    blocks = pseudorandomiser.main()
-    [run_block(blocks[i]) for i in block_order(participant_id)]
+    window = visual.Window((10, 10), allowGUI=False)
+    experiment.main(drum_pad)
