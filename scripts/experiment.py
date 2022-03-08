@@ -1,6 +1,7 @@
 from os import listdir
 from re import findall
 from itertools import chain
+from pickle import dump, load, HIGHEST_PROTOCOL
 
 from scripts import pseudorandomiser
 
@@ -26,14 +27,33 @@ def last_cached(directory='data/cache', level=0, result=None):
     return result
 
 
+def block_cache_path(i):
+    return '/'.join(['data', 'cache', 'participant_{}'.format(i), 'blockdata.pickle'])
+
+
+def save_blocks(i):
+    path = block_cache_path(i)
+    with open(path, 'rb') as b:
+        blocks = pseudorandomiser.main(i)
+        dump(blocks, b, protocol=HIGHEST_PROTOCOL)
+    return blocks
+
+
+def load_blocks(i):
+    path = block_cache_path(i)
+    with open(path, 'rb') as b:
+        blocks = load(b)
+    return blocks
+
+
 def new_participant(drum_pad, i):
-    blocks = pseudorandomiser.main(i)
+    blocks = save_blocks(i)
     for block in blocks:
         block.run_block(drum_pad, i)
 
 
 def resume_participant(drum_pad, i, b, t):
-    blocks = pseudorandomiser.main(i)
+    blocks = load_blocks(i)
     b += 1 if t == 119 else 0  # increment block if resuming from last trial in block
     t = 0 if t in (None, 119) else t+1  # reset trial to zero if resuming from new block, otherwise increment
 
