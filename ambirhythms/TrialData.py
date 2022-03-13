@@ -1,6 +1,7 @@
 from pickle import dump, HIGHEST_PROTOCOL
 import csv
-from os import mkdir, listdir
+
+from .Utilities import generate_filename
 
 
 class TrialData:
@@ -43,14 +44,3 @@ class TrialData:
                 **self.result
                 }
         csv.DictWriter(file, fieldnames=list(data.keys())).writerow(data)
-
-
-def generate_filename(directory_structure, level=0, directory=None):
-    target_directory = directory_structure[level]
-    subdirectory = '/'.join([directory, target_directory]) if directory else target_directory
-    if level == 4:
-        return subdirectory
-    else:
-        if target_directory not in listdir(directory):
-            mkdir(subdirectory)
-        return generate_filename(directory_structure, level + 1, subdirectory)
