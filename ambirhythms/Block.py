@@ -1,49 +1,43 @@
 import csv
 from os import listdir, path
 from pickle import load
+
 from psychopy import core, event
 
-from ambirhythms.Rhythms import Rhythms
-from ambirhythms.Stimulus import Stimulus
-from ambirhythms.TrialData import TrialData
+from .Rhythms import Rhythms
+from .Stimulus import Stimulus
+from .TrialData import TrialData
 
 
 class Block:
-    def __init__(self, block_num, block_name, trial_list):
+    def __init__(self, block_num, block_name, trial_list, inter_trial_interval=.5):
         self.trial_list = trial_list
         self.block_num = block_num
         self.block_name = ['blocked_ambiguous',
                            'blocked_unambiguous',
                            'randomised'][block_name]
         self.rhythms = Rhythms(12, 2)
+        self.inter_trial_interval = inter_trial_interval
 
     def __len__(self):
         return len(self.trial_list)
 
-    def run_block(self, drum_pad, participant_id, resume=None, loops=6):
+    def run_block(self, window, drum_pad, participant_id, resume=None, loops=6):
         print('Participant: {0}\n' 
               'Block: {1} (\'{2}\')\n'
               'Trial: {3}'.format(participant_id,
                                   self.block_num,
                                   self.block_name,
-                                  0 if resume is None else resume))
-        if resume:
-            self.resume_block(drum_pad, participant_id, resume, loops)
-        else:
-            for trial_num, trial in enumerate(self.trial_list):
-                stimulus, trial_info = self.prepare_trial(trial_num, trial)
-                data, result = self.run_trial(drum_pad, stimulus, loops)
-                self.end_trial(participant_id, trial_info, data, result)
-
-    def resume_block(self, drum_pad, participant_id, start, loops):
-        for trial_num, trial in enumerate(self.trial_list[start:]):
-            trial_num += start
+                                  0 if not resume else resume))
+        if resume is None:
+            resume = 0
+        for trial_num, trial in enumerate(self.trial_list[resume:]):
+            trial_num += resume
             stimulus, trial_info = self.prepare_trial(trial_num, trial)
-            data, result = self.run_trial(drum_pad, stimulus, loops)
+            data, result = self.run_trial(window, drum_pad, stimulus, loops)
             self.end_trial(participant_id, trial_info, data, result)
 
-    @staticmethod
-    def run_trial(drum_pad, stimulus, loops):
+    def run_trial(self, window, drum_pad, stimulus, loops):
         result = [None for _ in range(5)]
         stimulus.play(loops=loops)
         drum_pad.reset()
@@ -51,9 +45,8 @@ class Block:
             tmp = drum_pad.find_beat(stimulus.ioi, detailed=True, verbose=True)
             if tmp is not None:
                 result = tmp
-        while stimulus.volume > 0:  # fade to avoid popping
-            stimulus.volume -= 1e-5
-        stimulus.stop()
+
+        window.trial_feedback(stimulus, drum_pad.beat_found, result[2], self.inter_trial_interval)
         data = drum_pad.get_data()
         return [data, result]
 
@@ -92,15 +85,16 @@ class Block:
 
     def trial_break(self, trial_data):
         n = trial_data.trial_info['trial']
-        if n == (len(self.trial_list) / 2) - 1:
-            print('break')
+        block_mid = n == (len(self.trial_list) / 2) - 1
+        block_end = n == len(self.trial_list) - 1
+        finished = block_end and self.block_num == 2
+
+        if block_mid:
+            print('break')  # TODO: timed pause screen with instructions
             event.waitKeys(maxWait=2)
-        elif n == len(self.trial_list)-1:
+        if block_end:
             self.write_block(trial_data.participant_id, trial_data)
-            if self.block_num == 2:
-                core.quit()
-            else:
-                print('next block')
-                event.waitKeys(maxWait=2)
-        else:
-            pass
+            print('next block')  # TODO: untimed pause screen with instructions
+            event.waitKeys(maxWait=2)
+        if finished:
+            core.quit()  # TODO: proper exit screen
