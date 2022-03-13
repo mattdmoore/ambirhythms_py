@@ -58,7 +58,7 @@ class DrumPad:
             self.velocities.append(msg.velocity)
             self.new_tap = True
 
-    def find_beat(self, ioi, metre=12, n=10, verbose=False, detailed=False):
+    def find_beat(self, ioi, metre=12, n=9, verbose=False, detailed=False):
         if not 5 < n < 15:
             raise ValueError('n must be between 6 and 14 (inclusive)')
         if not self.listening:
@@ -66,25 +66,29 @@ class DrumPad:
 
         if self.new_tap and len(self.taps) >= n:
             self.new_tap = False
-            taps = array([2 * pi * t * 1e3 / ioi for t in self.taps[-n:]])
 
-            critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271][n-6]
-            divisors = [i for i in range(1, metre + 1) if metre % i == 0]
-            rho, theta, z, phase = [[None] * len(divisors) for _ in range(4)]
+            # Raw taps are in seconds before conversion e.g., [1.1, 1.4, 1.7, 2.0, 2.3 ...]
+            taps = array([2 * pi * t * 1e3 / ioi for t in self.taps[-n:]])  # scale to metre, convert to radians
+
+            critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271][n-6]  # Rayleigh test vals
+
+            divisors = [i for i in range(1, metre + 1) if metre % i == 0]  # 1, 2, 3, 4, 6, 12
+            rho, theta, z, phase = [[None] * len(divisors) for _ in range(4)]  # preallocate variables
 
             for i, d in enumerate(divisors):
-                scaled = taps / d
+                scaled = taps / d  # scale taps using each divisor
 
+                # Circular stats
                 rho[i] = resultant_vector(scaled)
                 theta[i] = circular_mean(scaled)
-                z[i] = n * rho[i] ** 2
+                z[i] = n * rho[i] ** 2  # Rayleigh test
 
                 if i == 0:
-                    if z[i] > critical_value:
+                    if z[i] > critical_value:  # if unit-level vector length is significant, use to estimate latency
                         phase[i] = theta[i] / (2 * pi)
                     else:
                         phase[i] = 0
-                else:
+                else:  # use unit-level phase to correct beat phases
                     phase[i] = d * (theta[i] / (2 * pi) % 1) - phase[0]
                     phase[i] = int(round(phase[i]) % d)
 

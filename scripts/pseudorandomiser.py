@@ -20,8 +20,9 @@ def pseudo_randomise_trials(ioi_list, participant_id):
     n = len(rhythms['ambiguous'].keys())
     idx_pool = sample(range(n), n)
 
-    blocked_idx = idx_pool[:-int(n / 3)]  # first 2/3 of pool
-    randomised_idx = idx_pool[-int(n / 3):]  # last 1/3 of pool
+    split_point = -int(n / 3)
+    blocked_idx = idx_pool[:split_point]  # first 2/3 of pool
+    randomised_idx = idx_pool[split_point:]  # last 1/3 of pool
 
     blocked_trials, randomised_trials = [[None] for _ in range(2)]
     for idx in [blocked_idx, randomised_idx]:
