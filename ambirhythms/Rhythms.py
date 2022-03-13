@@ -1,4 +1,4 @@
-from numpy import roll, bincount, cumsum
+from numpy import roll, bincount, cumsum, zeros
 from sympy.utilities.iterables import necklaces
 
 
@@ -19,6 +19,8 @@ class Rhythms:
 class Rhythm:
     def __init__(self, onsets):
         self.onsets = tuple(onsets)
+        if max(onsets) > 1:
+            self.from_durations(onsets)
 
     def __repr__(self):
         return str(self.onsets)
@@ -30,3 +32,9 @@ class Rhythm:
         durations = bincount(cumsum(self.onsets))
         durations[-1] += durations[0]
         return tuple(durations[1:])
+
+    def from_durations(self, durations):
+        idx = cumsum(durations) - durations
+        onsets = zeros(sum(durations), dtype=int)
+        onsets[idx] = 1
+        self.onsets = tuple(onsets)
