@@ -1,6 +1,29 @@
 from re import findall
 from itertools import chain
 from os import listdir, mkdir
+from psychopy import event, core
+
+
+def get_response():
+    key_options = {'left': -1,
+                   'right': 1,
+                   'escape': 'close'}
+
+    key = event.waitKeys(clearEvents=True)[0]
+
+    # Press escape twice to quit
+    if key_options[key] == 'close':
+        key = event.waitKeys(maxWait=1, clearEvents=True)[0]
+        if key and key_options[key] == 'close':
+            core.quit()
+
+    # Return valid keypress
+    elif key in key_options.keys():
+        return key_options[key]
+
+    # Wait for valid keypress
+    else:
+        get_response()
 
 
 def last_cached(directory='data/cache', level=0, result=None):
