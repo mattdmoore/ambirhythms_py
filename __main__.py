@@ -12,7 +12,7 @@ from scripts import pseudorandomiser, experiment, practice
 #   Assemble full experiment (no visuals)
 #     x - Counterbalance blocked and randomised lists
 #     x - Inter- and intra-block breaks (both skippable but intra-block timed to 2min?)
-#       - Jitter inter-trial interval between .5 and 1s
+#     x - Jitter inter-trial interval between .5 and 1s
 #   Package for install
 #       - Check on clean Python environment in Windows first, then lab install
 #            - Runs on laptop, soundcard(?) issues on PC; check with soundcard on laptop
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     blocks = pseudorandomiser.main(participant_id)
 
     drum_pad = ambirhythms.DrumPad('SPD')
-    window = ambirhythms.Screen((400, 400), 'pyglet')
+    window = ambirhythms.Screen((400, 400))
 
     practice.main(window, drum_pad, participant_id)
     experiment.main(window, drum_pad, participant_id, finish_state, blocks)

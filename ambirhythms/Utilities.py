@@ -7,23 +7,27 @@ from psychopy import event, core
 def get_response():
     key_options = {'left': -1,
                    'right': 1,
+                   'return': 'continue',
                    'escape': 'close'}
 
     key = event.waitKeys(clearEvents=True)[0]
 
-    # Press escape twice to quit
-    if key_options[key] == 'close':
-        key = event.waitKeys(maxWait=1, clearEvents=True)[0]
-        if key and key_options[key] == 'close':
-            core.quit()
+    if key in key_options.keys():
+        # Press escape twice to quit
+        if key_options[key] == 'close':
+            key = event.waitKeys(maxWait=1, clearEvents=True)
+            if key:
+                key = key[0]
+                if key in key_options.keys() and key_options[key] == 'close':
+                    core.quit()
+            get_response()
 
-    # Return valid keypress
-    elif key in key_options.keys():
-        return key_options[key]
+        # Return valid keypress
+        else:
+            return key_options[key]
 
-    # Wait for valid keypress
     else:
-        get_response()
+        return 0
 
 
 def last_cached(directory='data/cache', level=0, result=None):

@@ -10,7 +10,7 @@ from .TrialData import TrialData
 
 
 class Block:
-    def __init__(self, block_num, block_name, trial_list, inter_trial_interval=.5):
+    def __init__(self, block_num, block_name, trial_list, inter_trial_interval=.6):
         self.trial_list = trial_list
         self.block_num = block_num
         self.block_name = ['blocked_ambiguous',
