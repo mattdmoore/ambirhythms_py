@@ -1,5 +1,5 @@
 import ambirhythms
-
+from os import chdir, listdir
 from scripts import pseudorandomiser, experiment, practice
 
 # TODO:
@@ -18,6 +18,9 @@ from scripts import pseudorandomiser, experiment, practice
 #            - Runs on laptop, soundcard(?) issues on PC; check with soundcard on laptop
 
 if __name__ == '__main__':
+    if '__main__.py' not in listdir():  # if called as project folder
+        chdir('ambirhythms')
+
     participant_id, finish_state = ambirhythms.last_cached()
     blocks = pseudorandomiser.main(participant_id)
 
