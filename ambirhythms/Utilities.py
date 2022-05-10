@@ -4,30 +4,22 @@ from os import listdir, mkdir
 from psychopy import event, core
 
 
-def get_response():
+def keyboard_response(close=False):
     key_options = {'left': -1,
                    'right': 1,
-                   'return': 'continue',
+                   'return': 0,
                    'escape': 'close'}
 
     key = event.waitKeys(clearEvents=True)[0]
-
     if key in key_options.keys():
-        # Press escape twice to quit
         if key_options[key] == 'close':
-            key = event.waitKeys(maxWait=1, clearEvents=True)
-            if key:
-                key = key[0]
-                if key in key_options.keys() and key_options[key] == 'close':
-                    core.quit()
-            get_response()
-
-        # Return valid keypress
+            if close:
+                core.quit()
+            return keyboard_response(True)
         else:
             return key_options[key]
-
     else:
-        return 0
+        return keyboard_response()
 
 
 def last_cached(directory='data/cache', level=0, result=None):
