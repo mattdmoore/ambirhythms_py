@@ -70,7 +70,9 @@ class DrumPad:
             # Raw taps are in seconds before conversion e.g., [1.1, 1.4, 1.7, 2.0, 2.3 ...]
             taps = array([2 * pi * t * 1e3 / ioi for t in self.taps[-n:]])  # scale to metre, convert to radians
 
-            critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271][n-6]  # Rayleigh test vals
+            # Rayleigh test vals
+            # critical_value = [5.297, 5.556, 5.743, 5.885, 5.996, 6.085, 6.158, 6.219, 6.271, 6.316][n-6]  # p = .001
+            critical_value = [4.985, 5.181, 5.322, 5.430, 5.514, 5.582, 5.638, 5.685, 5.725, 5.759][n - 6]  # p = .002
 
             divisors = [i for i in range(1, metre + 1) if metre % i == 0]  # 1, 2, 3, 4, 6, 12
             rho, theta, z, phase = [[None] * len(divisors) for _ in range(4)]  # preallocate variables
