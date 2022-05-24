@@ -1,66 +1,93 @@
 from random import random
-from psychopy import visual
-from .Utilities import get_response
+from psychopy import visual, event
+from os import listdir
+from .Utilities import keyboard_response
 
 
 class Screen(visual.Window):
-    def __init__(self, size, backend='pyglet'):
-        super().__init__(size, color=[0., 0., 0.], winType=backend, allowGUI=False)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, color=(-.62, -.62, -.62), allowGUI=False)
+        self.mouse = event.Mouse(visible=False, win=self)
         self.frame_rate = self.getActualFrameRate()
 
-    def trial_feedback(self, stimulus, beat_found, rho, duration):
-        duration += (random() - .5) / 5  # +/- 100ms jitter to inter-trial feedback
+        files = sorted(listdir('./instructions'))
+        self.pages = [visual.ImageStim(self, 'instructions/' + f) for f in files]
+
+    def fixation_cross(self, practice=False):
+        size = 10
+        fixation = [visual.Line(win=self, start=[-size, 0], end=[size, 0], units='pix'),
+                    visual.Line(win=self, start=[0, -size], end=[0, size], units='pix')]
+
+        if practice:
+            text = visual.TextBox2(win=self,
+                                   text='Practice trial',
+                                   pos=[0, .2],
+                                   font='Roboto light',
+                                   letterHeight=.08,
+                                   alignment='center')
+            text.draw()
+        [line.draw() for line in fixation]
+        self.flip()
+
+    def trial_feedback(self, stimulus, beat_found, rho, duration, jitter_amount=75):
+        jitter = jitter_amount * ((random() - .5) * 2) / 1000
+        duration += jitter
         feedback = visual.Rect(self, size=self.size)
-        feedback.color = [0., 0., 0.]
+        feedback.color = (-.62, -.62, -.62)
         n_frames = int(self.frame_rate * duration)
 
         # Visual feedback
         if beat_found:
-            feedback.color = [.5, 1., .5]  # green: beat found, trial ended early
+            feedback.color = [.31, 1., .31]  # green: beat found, trial ended early
         elif rho is not None:
             beat_strength = max(rho)
-            feedback.color = [1., beat_strength, 0.]  # yellow: beat not found, shade based on max resultant vector
+            feedback.color = [1., beat_strength, beat_strength / 2 - .5]  # yellow: beat not found
         else:
-            feedback.color = [1., -.5, -.5]  # red: not enough taps to calculate beat
-
-        colour_increment = feedback.foreColor / n_frames
+            feedback.color = [.5, -.75, -.75]  # red: not enough taps to calculate beat
+        colour_increment = (feedback.foreColor + .62) / n_frames
         volume_increment = 1 / n_frames
 
         for frame in range(n_frames):
             feedback.draw()
-            feedback.color = feedback.foreColor - colour_increment
+            feedback.color = feedback.foreColor - colour_increment * (2 * frame / (n_frames - 1))  # quadratic decay
             stimulus.volume -= volume_increment  # fade to avoid popping
             self.flip()
+        self.flip()
         stimulus.stop()
 
-    def welcome_screen(self):
-        text = 'Welcome to the experiment\nPress any key to begin'
-        prompt = visual.TextBox2(self, text)
-        prompt.draw()
+    def welcome_screen(self, resume=False):
+        self.pages[0].draw()
         self.flip()
 
-        get_response()
-        self.instructions()
+        event.waitKeys()
+        return None if resume else self.instructions()
 
     def instructions(self):
-        text = [
-            'Use the left and right arrow keys to navigate these instructions',
-            'page 2',
-            'page 3',
-            'Press enter when you are ready to begin the experiment'
-        ]
+        def clamp(x, lower, upper): return lower if x < lower else upper if x > upper else x
 
-        page_num = 0
-        pages = [visual.TextBox2(self, t, alignment='centre') for t in text]
-
+        first, last = 1, 12
+        i = first
         while True:
-            # Draw current page
-            pages[page_num].draw()
+            self.pages[i].draw()
             self.flip()
 
-            # Navigate instruction pages
-            response = get_response()
-            if response == 'continue' and page_num == len(text) - 1:
-                break
-            else:
-                page_num += response if 0 <= page_num + response <= len(text) - 1 else 0
+            key = keyboard_response()
+            if i == last and key == 0:
+                self.flip()
+                return
+            i = clamp(i + key, first, last)
+
+    def practice_complete(self):
+        self.pages[19].draw()
+        self.flip()
+        while keyboard_response() != 0:
+            continue
+        self.flip()
+
+    def break_prompt(self, block, end=False):
+        idx = 13 + (block * 2) + int(end)
+        self.pages[idx].draw()
+        self.flip()
+        while keyboard_response() != 0:
+            continue
+        self.flip()
