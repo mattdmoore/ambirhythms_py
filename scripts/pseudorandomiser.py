@@ -78,7 +78,7 @@ def estimate_duration(block, ioi_list):
 
 
 def main(participant_id):
-    ioi_list = (130, 150, 170, 190)
+    ioi_list = (124, 153, 188, 232)
     # ioi_list = (10, 20, 30, 40)
     blocks = pseudo_randomise_trials(ioi_list, participant_id)
     estimate_duration(blocks[0], ioi_list)
