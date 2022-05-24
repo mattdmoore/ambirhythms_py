@@ -17,6 +17,8 @@ class Practice:
 
     def run_trial(self, window, drum_pad, stimulus, loops):
         result = [None for _ in range(5)]
+
+        window.fixation_cross(True)
         stimulus.play(loops=loops)
         drum_pad.reset()
         while not drum_pad.beat_found and stimulus.status == 1:
@@ -25,6 +27,7 @@ class Practice:
                 result = tmp
 
         window.trial_feedback(stimulus, drum_pad.beat_found, result[2], self.inter_trial_interval)
+        window.practice_complete()
         data = drum_pad.get_data()
         return [data, result]
 

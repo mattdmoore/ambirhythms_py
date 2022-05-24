@@ -10,4 +10,4 @@ def main(window, drum_pad, participant_id):
                      1, 0, 0, 0])
 
     practice = Practice(participant_id, rhythm, ioi)
-    # practice.begin(window, drum_pad)
+    practice.begin(window, drum_pad)
