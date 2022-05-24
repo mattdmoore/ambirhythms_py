@@ -4,13 +4,14 @@ from sympy.utilities.iterables import necklaces
 
 class Rhythms:
     def __init__(self, n, k):
-        self.rhythm = [Rhythm(n[::-1]) for n in necklaces(n, k)]
+        self.rhythm = [Rhythm(r[::-1]) for r in necklaces(n, k)]
 
     def __getitem__(self, idx):
         return self.rhythm[idx]
 
     def __iter__(self):
-        yield self.rhythm
+        for rhythm in self.rhythm:
+            yield rhythm
 
     def __len__(self):
         return len(self.rhythm)
